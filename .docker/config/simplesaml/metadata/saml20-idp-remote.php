@@ -5,12 +5,12 @@ $idpEntityId = getenv('SIMPLESAMLPHP_IDP_ENTITYID') ?: $idpBaseURL;
 $fallbackBinding = getenv('SIMPLESAMLPHP_IDP_DEFAULT_BINDING');
 
 $bindingKeys = [
-    'SIMPLESAMLPHP_IDP_HTTP_POST_BINDING',
     'SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING',
+    'SIMPLESAMLPHP_IDP_HTTP_POST_BINDING',
     'SIMPLESAMLPHP_IDP_SOAP_BINDING',
     'SIMPLESAMLPHP_IDP_HTTP_ARTIFACT',
-    'SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING',
     'SIMPLESAMLPHP_IDP_LOGOUT_HTTP_REDIRECT_BINDING',
+    'SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING',
     'SIMPLESAMLPHP_IDP_LOGOUT_SOAP_BINDING',
     'SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT',
 ];
@@ -18,75 +18,75 @@ $bindingKeys = [
 // Initialise bindings.
 $bindings = [];
 
-// Set bindings based on env variable or otherwise use fallback.
+// Set bindings based on their associated env variables.
 foreach ($bindingKeys as $key) {
     $envVar = getenv($key);
 
-    // Special logic for logout bindings:
-    // If no environment variable is set for a logout binding,
-    // fall back to the corresponding non-logout binding value instead.
+    // Special for LOGOUT: fallback to non-logout sibling if present.
     if (str_contains($key, 'LOGOUT') && empty($envVar)) {
         $nonLogoutKey = str_replace('LOGOUT_', '', $key);
-        $envVar = getenv($nonLogoutKey) ?: $fallbackBinding;
+        $envVar = getenv($nonLogoutKey);
     }
 
-    // Apply a default fallback binding if environment variable is not set.
-    $envVar = $envVar ?: $fallbackBinding;
+    // Special for HTTP-Redirect: still attempt a fallback if empty.
+    // This is because SimpleSAMLphp uses HTTP-Redirect binding by default.
+    if ($key === 'SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING' && empty($envVar)) {
+        $envVar = $fallbackBinding;
+    }
 
-    // Prepend base URL if binding is not a full URL.
+    if (empty($envVar)) {
+        continue;
+    }
+
     $bindings[$key] = str_starts_with($envVar, 'http') ? $envVar : $idpBaseURL . $envVar;
 }
-
-
 
 $metadata[$idpEntityId] = [
   'entityid' => $idpEntityId,
   'contacts' => [],
   'metadata-set' => 'saml20-idp-remote',
   'sign.authnrequest' => filter_var(getenv('SIMPLESAMLPHP_IDP_SIGN_AUTH'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
-  'SingleSignOnService' => [
-    [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_POST_BINDING'],
-    ],
-    [
+  'SingleSignOnService' => array_values(array_filter([
+    !empty($bindings['SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING']) ? [
       'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
       'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING'],
-    ],
-    [
+    ] : null,
+    !empty($bindings['SIMPLESAMLPHP_IDP_HTTP_POST_BINDING']) ? [
+      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+      'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_POST_BINDING'],
+    ] : null,
+    !empty($bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING']) ? [
       'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
       'Location' => $bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'],
-    ],
-    [
+    ] : null,
+    !empty($bindings['SIMPLESAMLPHP_IDP_HTTP_ARTIFACT']) ? [
       'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact',
       'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_ARTIFACT'],
-    ],
-  ],
-  'SingleLogoutService' => [
-    [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING'],
-    ],
-    [
+    ] : null,
+  ])),
+  'SingleLogoutService' => array_values(array_filter([
+    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_REDIRECT_BINDING']) ? [
       'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
       'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_REDIRECT_BINDING'],
-    ],
-    [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT'],
-    ],
-    [
+    ] : null,
+    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING']) ? [
+      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING'],
+    ] : null,
+    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_SOAP_BINDING']) ? [
       'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
       'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_SOAP_BINDING'],
-    ],
-  ],
-  'ArtifactResolutionService' => [
-    [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'],
-      'index' => 0,
-    ],
-  ],
+    ] : null,
+    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT']) ? [
+      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact',
+      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT'],
+    ] : null,
+  ])),
+  'ArtifactResolutionService' => !empty($bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING']) ? [[
+    'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
+    'Location' => $bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'],
+    'index' => 0,
+  ]] : [],
   'NameIDFormats' => [
     'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
     'urn:oasis:names:tc:SAML:2.0:nameid-format:transient',

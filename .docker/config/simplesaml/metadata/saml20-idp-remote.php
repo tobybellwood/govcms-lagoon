@@ -34,10 +34,13 @@ foreach ($bindingKeys as $key) {
         $envVar = $fallbackBinding;
     }
 
+    // Skip if empty.
     if (empty($envVar)) {
         continue;
     }
 
+    // Binding locations need to be fully qualified URLs.
+    // Prepend base URL if necessary.
     $bindings[$key] = str_starts_with($envVar, 'http') ? $envVar : $idpBaseURL . $envVar;
 }
 
@@ -46,47 +49,9 @@ $metadata[$idpEntityId] = [
   'contacts' => [],
   'metadata-set' => 'saml20-idp-remote',
   'sign.authnrequest' => filter_var(getenv('SIMPLESAMLPHP_IDP_SIGN_AUTH'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
-  'SingleSignOnService' => array_values(array_filter([
-    !empty($bindings['SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING'],
-    ] : null,
-    !empty($bindings['SIMPLESAMLPHP_IDP_HTTP_POST_BINDING']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_POST_BINDING'],
-    ] : null,
-    !empty($bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'],
-    ] : null,
-    !empty($bindings['SIMPLESAMLPHP_IDP_HTTP_ARTIFACT']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_ARTIFACT'],
-    ] : null,
-  ])),
-  'SingleLogoutService' => array_values(array_filter([
-    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_REDIRECT_BINDING']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_REDIRECT_BINDING'],
-    ] : null,
-    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING'],
-    ] : null,
-    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_SOAP_BINDING']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_SOAP_BINDING'],
-    ] : null,
-    !empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT']) ? [
-      'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact',
-      'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT'],
-    ] : null,
-  ])),
-  'ArtifactResolutionService' => !empty($bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING']) ? [[
-    'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
-    'Location' => $bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'],
-    'index' => 0,
-  ]] : [],
+  'SingleSignOnService' => [],
+  'SingleLogoutService' => [],
+  'ArtifactResolutionService' => [],
   'NameIDFormats' => [
     'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
     'urn:oasis:names:tc:SAML:2.0:nameid-format:transient',
@@ -103,3 +68,70 @@ $metadata[$idpEntityId] = [
     ],
   ],
 ];
+
+// Conditionally add SSO bindings.
+if (!empty($bindings['SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING'])) {
+    $metadata[$idpEntityId]['SingleSignOnService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_REDIRECT_BINDING'],
+    ];
+}
+
+if (!empty($bindings['SIMPLESAMLPHP_IDP_HTTP_POST_BINDING'])) {
+    $metadata[$idpEntityId]['SingleSignOnService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_POST_BINDING'],
+    ];
+}
+
+if (!empty($bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'])) {
+    $metadata[$idpEntityId]['SingleSignOnService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'],
+    ];
+}
+
+if (!empty($bindings['SIMPLESAMLPHP_IDP_HTTP_ARTIFACT'])) {
+    $metadata[$idpEntityId]['SingleSignOnService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_HTTP_ARTIFACT'],
+    ];
+}
+
+// Conditionally add SLO bindings.
+if (!empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_REDIRECT_BINDING'])) {
+    $metadata[$idpEntityId]['SingleLogoutService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_REDIRECT_BINDING'],
+    ];
+}
+
+if (!empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING'])) {
+    $metadata[$idpEntityId]['SingleLogoutService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_POST_BINDING'],
+    ];
+}
+
+if (!empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_SOAP_BINDING'])) {
+    $metadata[$idpEntityId]['SingleLogoutService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_SOAP_BINDING'],
+    ];
+}
+
+if (!empty($bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT'])) {
+    $metadata[$idpEntityId]['SingleLogoutService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_LOGOUT_HTTP_ARTIFACT'],
+    ];
+}
+
+// Add ArtifactResolutionService only if SOAP present.
+if (!empty($bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'])) {
+    $metadata[$idpEntityId]['ArtifactResolutionService'][] = [
+        'Binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:SOAP',
+        'Location' => $bindings['SIMPLESAMLPHP_IDP_SOAP_BINDING'],
+        'index' => 0,
+    ];
+}

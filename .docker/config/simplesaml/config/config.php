@@ -1164,7 +1164,7 @@ $config = [
      * Metadata signing can also be enabled for a individual SP or IdP by setting the
      * same option in the metadata for the SP or IdP.
      */
-    'metadata.sign.enable' => false,
+    'metadata.sign.enable' => filter_var(getenv('SIMPLESAMLPHP_SP_SIGN_METADATA'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
 
     /*
      * The default key & certificate which should be used to sign generated metadata. These

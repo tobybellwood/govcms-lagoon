@@ -12,7 +12,7 @@ CONFIGSET="${CONFIGSET:-/opt/solr/server/solr/configsets/drupal}"
 
 # The following scripts are provided by the base images.
 if [ -n "$GOVCMS_SOLR_RECREATE" ]; then
-  # solr-recreate will remove the index data and configuration
+  # solr-recreate will remove the core and configuration
   # and rebuild from the configset provided.
   solr-recreate "$INDEX" "$CONFIGSET"
 else

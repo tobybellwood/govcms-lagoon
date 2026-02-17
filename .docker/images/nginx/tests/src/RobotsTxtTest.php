@@ -2,6 +2,7 @@
 
 namespace GovCMSTests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,7 +16,7 @@ class RobotsTxtTest extends TestCase {
    * @return array
    *   Array of disallowed hosts.
    */
-  public function providerDisallowedHosts() {
+  public static function providerDisallowedHosts(): array {
     return [
       ['test.govcms.gov.au'],
       ['wsa.govcms.gov.au'],
@@ -28,9 +29,8 @@ class RobotsTxtTest extends TestCase {
 
   /**
    * Test that robots.txt returns correct Disallow directive for provided hosts.
-   *
-   * @dataProvider providerDisallowedHosts
    */
+  #[DataProvider('providerDisallowedHosts')]
   public function testDisallowedHosts($host) {
     $robots_txt = \curl_get_content('/robots.txt', "-H 'Host: $host'");
     $this->assertEquals('User-agent: *', $robots_txt[0]);

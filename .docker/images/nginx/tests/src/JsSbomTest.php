@@ -41,8 +41,9 @@ YAML;
     file_put_contents(self::$overrideFile, $overrideContent);
     
     // Restart nginx with the new configuration
-    $cwd = getcwd();
-    exec("cd {$cwd} && docker compose -f docker-compose.yml -f " . self::$overrideFile . " up -d nginx 2>&1", $output, $ret);
+    // Navigate to workspace root (4 levels up from tests directory)
+    $workspaceRoot = dirname(__DIR__, 5);
+    exec("cd {$workspaceRoot} && docker compose -f docker-compose.yml -f " . self::$overrideFile . " up -d nginx 2>&1", $output, $ret);
     
     if ($ret !== 0) {
       throw new \RuntimeException('Failed to restart nginx with SBOM configuration: ' . implode("\n", $output));
@@ -59,8 +60,9 @@ YAML;
     parent::tearDownAfterClass();
     
     // Restart nginx without the override to restore original state
-    $cwd = getcwd();
-    exec("cd {$cwd} && docker compose up -d nginx 2>&1", $output, $ret);
+    // Navigate to workspace root (4 levels up from tests directory)
+    $workspaceRoot = dirname(__DIR__, 5);
+    exec("cd {$workspaceRoot} && docker compose up -d nginx 2>&1", $output, $ret);
     
     // Remove temporary override file
     if (self::$overrideFile && file_exists(self::$overrideFile)) {

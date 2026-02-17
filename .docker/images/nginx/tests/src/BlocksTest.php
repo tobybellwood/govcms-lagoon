@@ -2,6 +2,7 @@
 
 namespace GovCMSTests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,7 +16,7 @@ class BlocksTest extends TestCase {
    * @return array
    *   List of user agents.
    */
-  public function providerAggressiveAgents() {
+  public static function providerAggressiveAgents(): array {
     return [
       ['8LEGS'],
       // ['AhfresBot'], # This 500s?
@@ -37,7 +38,7 @@ class BlocksTest extends TestCase {
    * @return array
    *    List of user agents.
    */
-  public function providerMicrosoftAgents() {
+  public static function providerMicrosoftAgents(): array {
     return [
       ['Skype.for.Business'],
       ['Microsoft.Office'],
@@ -50,7 +51,7 @@ class BlocksTest extends TestCase {
    * @return array
    *   List of paths.
    */
-  public function providerWordpressPaths() {
+  public static function providerWordpressPaths(): array {
     return [
       ['/wp-admin'],
       // ['/wp-admin/index.php'], # 500s
@@ -71,7 +72,7 @@ class BlocksTest extends TestCase {
    * @return array
    *    List of query strings.
    */
-  public function providerQueryStrings() {
+  public static function providerQueryStrings(): array {
     return [
       ['?q=node/add'],
       ['?q=user/register'],
@@ -80,9 +81,8 @@ class BlocksTest extends TestCase {
 
   /**
    * Ensure that aggressive bots are blocked.
-   *
-   * @dataProvider providerAggressiveAgents
    */
+  #[DataProvider('providerAggressiveAgents')]
   public function testAggressiveCrawlerBlock($ua) {
     $headers = \get_curl_headers("/", "--user-agent '{$ua}'");
     $this->assertEquals(403, $headers['Status']);
@@ -90,9 +90,8 @@ class BlocksTest extends TestCase {
 
   /**
    * Ensure that Microsofts home check is prevented.
-   *
-   * @dataProvider providerMicrosoftAgents
    */
+  #[DataProvider('providerMicrosoftAgents')]
   public function testMicrosoftHomeCall($ua) {
     $headers = \get_curl_headers("/", "--user-agent '{$ua}'");
     $this->assertEquals(403, $headers['Status']);
@@ -108,9 +107,8 @@ class BlocksTest extends TestCase {
 
   /**
    * Ensure that wordpress-like paths are blocked.
-   *
-   * @dataProvider providerWordpressPaths
    */
+  #[DataProvider('providerWordpressPaths')]
   public function testWordpressAttacks($path) {
     $headers = \get_curl_headers($path);
     $this->assertEquals(403, $headers['Status']);
@@ -118,9 +116,8 @@ class BlocksTest extends TestCase {
 
   /**
    * Ensure common query strings vectors are restricted.
-   *
-   * @dataProvider providerQueryStrings
    */
+  #[DataProvider('providerQueryStrings')]
   public function testQueryStringBlock($query) {
     $headers = \get_curl_headers($query);
     $this->assertEquals(403, $headers['Status']);

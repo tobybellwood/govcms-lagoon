@@ -1,17 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
- <phpunit bootstrap = "bootstrap.php"
-    backupGlobals               = "false"
-    backupStaticAttributes      = "false"
-    colors                      = "true"
-    convertErrorsToExceptions   = "true"
-    convertNoticesToExceptions  = "true"
-    convertWarningsToExceptions = "true"
-    processIsolation            = "false"
-    stopOnFailure               = "false">
-     <testsuites>
-        <testsuite name="nginx">
-            <directory>src</directory>
-        </testsuite>
-    </testsuites>
- </phpunit>
+<phpunit bootstrap="bootstrap.php" backupGlobals="false" colors="true" processIsolation="false" stopOnFailure="false" cacheDirectory=".phpunit.cache" backupStaticProperties="false">
+  <testsuites>
+    <testsuite name="nginx">
+      <directory>src</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>

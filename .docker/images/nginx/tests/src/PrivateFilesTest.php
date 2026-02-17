@@ -2,6 +2,7 @@
 
 namespace GovCMSTests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,7 +16,7 @@ class PrivateFilesTest extends TestCase {
   public function setUp(): void {
     // Make sure private files directory exists in the nginx container.
     shell_exec('docker compose exec nginx mkdir -p /app/web/sites/default/files/private');
-    foreach ($this->providerFileAccess() as $parts) {
+    foreach (self::providerFileAccess() as $parts) {
       list($file, $path) = $parts;
       // Move out test files.
       shell_exec("docker cp $path/$file $(docker compose ps -q nginx):/app/web/sites/default/files/private/");
@@ -28,7 +29,7 @@ class PrivateFilesTest extends TestCase {
    * @return array
    *    File list.
    */
-  public function providerFileAccess() {
+  public static function providerFileAccess(): array {
     $path = dirname(__DIR__);
     return [
       ['autotest.jpg', "$path/resources/"],
@@ -39,13 +40,12 @@ class PrivateFilesTest extends TestCase {
 
   /**
    * Ensure that private files are restricted.
-   *
-   * @dataProvider providerFileAccess
    */
-  public function testFileAccess($file) {
-    $path = "/sites/default/files/private/$file";
-    $headers = \get_curl_headers($path);
-    $this->assertEquals(404, $headers['Status'], "[$path] is publicly accessible");
+  #[DataProvider('providerFileAccess')]
+  public function testFileAccess($file, $path) {
+    $testPath = "/sites/default/files/private/$file";
+    $headers = \get_curl_headers($testPath);
+    $this->assertEquals(404, $headers['Status'], "[$testPath] is publicly accessible");
   }
 
 }

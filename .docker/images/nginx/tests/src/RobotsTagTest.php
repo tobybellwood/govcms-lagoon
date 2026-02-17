@@ -2,6 +2,7 @@
 
 namespace GovCMSTests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,7 +16,7 @@ class RobotsTagTest extends TestCase {
    * @return array
    *   A list of invalid host names.
    */
-  public function providerInvalidHosts() {
+  public static function providerInvalidHosts(): array {
     return [
       ['test.govcms.gov.au'],
       ['wsa.govcms.gov.au'],
@@ -31,7 +32,7 @@ class RobotsTagTest extends TestCase {
    * @return array
    *   An array of valid domains.
    */
-  public function providerValidHosts() {
+  public static function providerValidHosts(): array {
     return [
       ['test.gov.au'],
       ['betahealth-sr.gov.au'],
@@ -41,9 +42,8 @@ class RobotsTagTest extends TestCase {
 
   /**
    * Ensure that the X-Robots-Tag is set to none.
-   *
-   * @dataProvider providerInvalidHosts
    */
+  #[DataProvider('providerInvalidHosts')]
   public function testXRobotsNone($host) {
     $headers = \get_curl_headers('/', "-H 'Host: $host'");
     $this->assertArrayHasKey('X-Robots-Tag', $headers);
@@ -52,9 +52,8 @@ class RobotsTagTest extends TestCase {
 
   /**
    * Ensure that X-Robots-Tag is set to all.
-   *
-   * @dataProvider providerValidHosts
    */
+  #[DataProvider('providerValidHosts')]
   public function testXRobotsAll($host) {
     $headers = \get_curl_headers('/', "-H 'Host: $host'");
     $this->assertArrayHasKey('X-Robots-Tag', $headers);

@@ -2,6 +2,7 @@
 
 namespace GovCMSTests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class FilesCacheTest extends TestCase {
@@ -11,7 +12,7 @@ class FilesCacheTest extends TestCase {
    */
   public function setUp(): void {
     shell_exec('docker compose exec nginx mkdir -p /app/sites/default/files');
-    foreach ($this->providerExpiredHeaderPath() as $parts) {
+    foreach (self::providerExpiredHeaderPath() as $parts) {
       list($file, $path) = $parts;
       shell_exec("docker cp $path/$file $(docker compose ps -q nginx):/app/web/sites/default/files/");
     }
@@ -23,7 +24,7 @@ class FilesCacheTest extends TestCase {
    * @return array
    *   File list.
    */
-  public function providerExpiredHeaderPath() {
+  public static function providerExpiredHeaderPath(): array {
     $path = dirname(__DIR__);
     return [
       ['autotest.jpg', "$path/resources/", 'max-age=2628001'],
@@ -34,9 +35,8 @@ class FilesCacheTest extends TestCase {
 
   /**
    * Ensure that expires headers are correctly set.
-   *
-   * @dataProvider providerExpiredHeaderPath
    */
+  #[DataProvider('providerExpiredHeaderPath')]
   public function testExpiredHeaderPath($file, $path, $expected) {
     $path = "/sites/default/files/$file";
     $headers = \get_curl_headers($path);
